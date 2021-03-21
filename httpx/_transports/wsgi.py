@@ -99,6 +99,7 @@ class WSGITransport(BaseTransport):
             "REMOTE_ADDR": self.remote_addr,
         }
         for header_key, header_value in request.headers.raw:
+            # TODO(lk): any utf-8 header support?
             key = header_key.decode("ascii").upper().replace("-", "_")
             if key not in ("CONTENT_TYPE", "CONTENT_LENGTH"):
                 key = "HTTP_" + key

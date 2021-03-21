@@ -89,6 +89,7 @@ def request(
     <Response [200 OK]>
     ```
     """
+    # TODO(lk)
     with Client(
         cookies=cookies,
         proxies=proxies,
@@ -141,6 +142,7 @@ def stream(
 
     [0]: /quickstart#streaming-responses
     """
+    # TODO(lk)
     with Client(
         cookies=cookies,
         proxies=proxies,

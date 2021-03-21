@@ -1218,6 +1218,7 @@ class Response:
         # the client will set `response.next_request`.
         self.next_request: typing.Optional[Request] = None
 
+        # TODO(lk): ext is empty dict on sync resp
         self.extensions = {} if extensions is None else extensions
         self.history = [] if history is None else list(history)
 
@@ -1356,6 +1357,8 @@ class Response:
             return None
 
         _, params = cgi.parse_header(content_type)
+        # Co(lk): return None on purpose. Default value recommended by RFC is
+        #  outdated. Check https://github.com/encode/httpx/pull/1269/ for detail
         if "charset" not in params:
             return None
 
@@ -1375,6 +1378,7 @@ class Response:
         return None if match is None else match.encoding
 
     def _get_content_decoder(self) -> ContentDecoder:
+        # Co(lk): decoder for compression, not for charset
         """
         Returns a decoder instance which can be used to decode the raw byte
         content, depending on the Content-Encoding used in the response.
@@ -1572,6 +1576,7 @@ class Response:
             for i in range(0, len(self._content), max(chunk_size, 1)):
                 yield self._content[i : i + chunk_size]
         else:
+            # Co(lk): decode compression
             decoder = self._get_content_decoder()
             chunker = ByteChunker(chunk_size=chunk_size)
             with request_context(request=self._request):
@@ -1649,6 +1654,7 @@ class Response:
 
         if not self.is_closed:
             self.is_closed = True
+            # Co(lk): set in Client._send_single_request()
             with request_context(request=self._request):
                 self.stream.close()
 

@@ -62,7 +62,7 @@ class Auth:
         """
         if self.requires_request_body:
             request.read()
-
+        # Co(lk): insert auth info into request and yield it
         flow = self.auth_flow(request)
         request = next(flow)
 
@@ -72,6 +72,9 @@ class Auth:
                 response.read()
 
             try:
+                # Co(lk): send the response into flow to generate later
+                #  auth step. Not every Auth need it.
+                #  check DigestAuth for detail
                 request = flow.send(response)
             except StopIteration:
                 break
@@ -157,6 +160,7 @@ class DigestAuth(Auth):
         self._password = to_bytes(password)
 
     def auth_flow(self, request: Request) -> typing.Generator[Request, Response, None]:
+        # Co(lk): extract info from resp and convert it into auth on request
         response = yield request
 
         if response.status_code != 401 or "www-authenticate" not in response.headers:

@@ -75,7 +75,7 @@ class FileField:
         self.name = name
 
         fileobj: FileContent
-
+        # Co(lk): user should open a file and pass the fileobj
         if isinstance(value, tuple):
             try:
                 filename, fileobj, content_type = value  # type: ignore

@@ -170,9 +170,11 @@ class BaseClient:
     ):
         event_hooks = {} if event_hooks is None else event_hooks
 
+        # TODO(lk):
         self._base_url = self._enforce_trailing_slash(URL(base_url))
 
         self._auth = self._build_auth(auth)
+        # Co(lk): QueryParams implemented with dict and list
         self._params = QueryParams(params)
         self.headers = Headers(headers)
         self._cookies = Cookies(cookies)
@@ -399,6 +401,7 @@ class BaseClient:
         Merge a headers argument together with any headers on the client,
         to create the headers used for the outgoing request.
         """
+        # Co(lk): override related key
         merged_headers = Headers(self.headers)
         merged_headers.update(headers)
         return merged_headers
@@ -410,6 +413,7 @@ class BaseClient:
         Merge a queryparams argument together with any queryparams on the client,
         to create the queryparams used for the outgoing request.
         """
+        # Co(lk): replace related query params
         if params or self.params:
             merged_queryparams = QueryParams(self.params)
             merged_queryparams = merged_queryparams.merge(params)
@@ -678,6 +682,7 @@ class Client(BaseClient):
                 {URLPattern(key): transport for key, transport in mounts.items()}
             )
 
+        # TODO(lk): how URLPattern is sorted?
         self._mounts = dict(sorted(self._mounts.items()))
 
     def _init_transport(
@@ -897,11 +902,17 @@ class Client(BaseClient):
         follow_redirects: bool,
         history: typing.List[Response],
     ) -> Response:
+        # Co(lk): auth_flow, a generator. pass in resp and generate a req
+        #  with auth info. Some Auth take several rounds to complete, and
+        #  it needs info extracted from resp for next step
         auth_flow = auth.sync_auth_flow(request)
         try:
             request = next(auth_flow)
 
+            # Co(lk): auth like DigestAuth take some rounds to complete
             while True:
+                # Co(lk): redirects happens in _send_handling_redirects()
+                #  the resp we get is the resp after redirects
                 response = self._send_handling_redirects(
                     request,
                     follow_redirects=follow_redirects,
@@ -909,10 +920,12 @@ class Client(BaseClient):
                 )
                 try:
                     try:
+                        # Co(lk): regenerate a request with auth from info on resp
                         next_request = auth_flow.send(response)
                     except StopIteration:
                         return response
 
+                    # Co(lk): auth has not been completed. Send another auth request
                     response.history = list(history)
                     response.read()
                     request = next_request
@@ -1940,6 +1953,7 @@ class AsyncClient(BaseClient):
                 await proxy.__aexit__(exc_type, exc_value, traceback)
 
     def __del__(self) -> None:
+        # NOTE(lk): not possible to call aclose in a sync call. Warn the user.
         # We use 'getattr' here, to manage the case where '__del__()' is called
         # on a partically initiallized instance that raised an exception during
         # the call to '__init__()'.
